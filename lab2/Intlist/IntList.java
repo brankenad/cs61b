@@ -82,7 +82,8 @@ public class IntList {
 
     public static IntList dcatenate(IntList A, IntList B) {
         //TODO:  fill in method
-        if(A == null){
+        /** interative version*/
+        /*if(A == null){
             return B;
         } else {
             IntList C = A;
@@ -91,6 +92,15 @@ public class IntList {
             }
             C.rest = B;
         }
+        return A;*/
+        /** recursive version*/
+        if (A == null){
+            return B;
+        }else if(A.rest == null){
+            A.rest = B;
+            return A;
+        }
+        A.rest = dcatenate(A.rest, B);
         return A;
     }
 
@@ -100,11 +110,25 @@ public class IntList {
      */
     public static IntList catenate(IntList A, IntList B) {
         //TODO:  fill in method
-        if (A == null) {
+        /** interative vision*/
+        if (A == null){
             return B;
         }
-        return new IntList(A.first, catenate(A.rest, B));
+        IntList C = new IntList(A.first, null);
+        IntList D = C;
+        while(A.rest != null){
+            A = A.rest;
+            D.rest = new IntList (A.first, A.rest);
+            D = D.rest;
+        }
+        return dcatenate(C, B);
+        /**recursive version*/
+        /*if (A == null) {
+            return B;
+        }
+        return new IntList(A.first, catenate(A.rest, B));*/
     }
+
 
 
 

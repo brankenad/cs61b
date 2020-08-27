@@ -1,17 +1,17 @@
 /**
- *Creating a Generic Linked List Deque 
+ *Creat a Generic Linked List Deque 
  */
 
 public class LinkedListDeque<T> {
 	private  class LinkedListNode {
 		private LinkedListNode prev,
 							   next;
-		private T item;
+		private T items;
 
 		private LinkedListNode(LinkedListNode p, T x, LinkedListNode n) {
 			prev = p;
 			next = n;
-			item = x;
+			items = x;
 		}
 	}
 
@@ -43,7 +43,7 @@ public class LinkedListDeque<T> {
 	}
 
 	/**
-	 * Returns the number of items in the deque.
+	 * Return the number of items in the deque.
 	 */
 
 	public int size() {
@@ -51,7 +51,7 @@ public class LinkedListDeque<T> {
 	}
 
 	/**
-	 * Returns true if deque is empty, false otherwise.
+	 * Return true if deque is empty, false otherwise.
 	 */
 
 	public boolean isEmpty() {
@@ -59,7 +59,7 @@ public class LinkedListDeque<T> {
 	}
 
 	/**	
-	 * Gets the item at the given index, where 0 is the front, 1 is the next item, and so forth.
+	 * Get the item at the given index, where 0 is the front, 1 is the next item, and so forth.
 	 * If no such item exists, returns null.
 	 */
 
@@ -69,7 +69,7 @@ public class LinkedListDeque<T> {
 			track = track.next;
 		}
 
-		return track.next.item;
+		return track.next.items;
 	}
 
 	/**
@@ -78,7 +78,7 @@ public class LinkedListDeque<T> {
 
 	private T getRecursiveHelp(int index, LinkedListNode m) {
 		if (index == 0) {
-			return m.next.item;
+			return m.next.items;
 		}
 
 		return getRecursiveHelp(index - 1, m.next);
@@ -93,21 +93,21 @@ public class LinkedListDeque<T> {
 	}
 
 	/**
-	 * Prints the items in the deque from first to last, separated by a space.
+	 * Print the items in the deque from first to last, separated by a space.
 	 * Once all the items have been printed, print out a new line.
 	 */
 
 	public void printDeque() {
 		LinkedListNode track = sentienel;
 		for (int i = 0; i < size; i = i + 1) {
-			System.out.print(track.next.item + " ");
+			System.out.print(track.next.items + " ");
 		}
 
 		System.out.print("\n");
 	}
 
 	/**
-	 * Adds an item of type T to the front of the deque.
+	 * Add an item of type T to the front of the deque.
 	 */
 
 	public void addFirst(T item) {
@@ -117,7 +117,7 @@ public class LinkedListDeque<T> {
 	}
 
 	/**
-	 * Removes and returns the item at the front of the deque.
+	 * Remove and returns the item at the front of the deque.
 	 * If no such item exists, returns null.
 	 */
 
@@ -125,14 +125,14 @@ public class LinkedListDeque<T> {
 		if (!isEmpty()) {
 			size = size - 1;
 		}
-		T rm = sentienel.next.item;
+		T rm = sentienel.next.items;
 		sentienel.next = sentienel.next.next;
 		sentienel.next.prev = sentienel;
 		return rm;
 	}
 
 	/**
-	 * Adds an item of type T to the back of the deque.
+	 * Add an item of type T to the back of the deque.
 	 */
 
 	public void addLast(T item) {
@@ -142,7 +142,7 @@ public class LinkedListDeque<T> {
 	}
 
 	/**
-	 * Removes and returns the item at the front of the deque.
+	 * Remove and returns the item at the front of the deque.
 	 * If no such item exists, returns null.
 	 */
 
@@ -150,7 +150,7 @@ public class LinkedListDeque<T> {
 		if (!isEmpty()) {
 			size = size - 1;
 		}
-		T rm = sentienel.prev.item;
+		T rm = sentienel.prev.items;
 		sentienel.prev = sentienel.prev.prev;
 		sentienel.prev.next = sentienel;
 		return rm;

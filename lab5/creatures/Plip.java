@@ -10,6 +10,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 
+import static huglife.HugLifeUtils.randomEntry;
+
 /**
  * An implementation of a motile pacifist photosynthesizer.
  *
@@ -57,7 +59,9 @@ public class Plip extends Creature {
      * that you get this exactly correct.
      */
     public Color color() {
-        g = 63;
+        r = 99;
+        b = 76;
+        g = (int) (96 * energy + 63);
         return color(r, g, b);
     }
 
@@ -75,6 +79,10 @@ public class Plip extends Creature {
      */
     public void move() {
         // TODO
+        energy -= 0.15;
+        if (energy <= 0.0) {
+            energy = 0.0;
+        }
     }
 
 
@@ -83,6 +91,10 @@ public class Plip extends Creature {
      */
     public void stay() {
         // TODO
+        energy += 0.2;
+        if (energy >= 2.0) {
+            energy = 2.0;
+        }
     }
 
     /**
@@ -91,7 +103,9 @@ public class Plip extends Creature {
      * Plip.
      */
     public Plip replicate() {
-        return this;
+        energy *= 0.5;
+        Plip newPlip = new Plip(energy);
+        return newPlip;
     }
 
     /**
@@ -113,11 +127,27 @@ public class Plip extends Creature {
         boolean anyClorus = false;
         // TODO
         // (Google: Enhanced for-loop over keys of NEIGHBORS?)
-        // for () {...}
-
-        if (false) { // FIXME
-            // TODO
+        for (Direction key : neighbors.keySet()) {
+            if (neighbors.get(key).name() == "empty") {
+                emptyNeighbors.add(key);
+            } else if (neighbors.get(key).name() == "Clorus") {
+                anyClorus = true;
+            }
         }
+
+        if (emptyNeighbors.size() == 0) { // FIXME
+            // TODO
+            return new Action(Action.ActionType.STAY);
+        } else if (energy >= 1) {
+            return new Action(Action.ActionType.REPLICATE, randomEntry(emptyNeighbors));
+        } else if (anyClorus) {
+            double moveProbability = 0.5;
+            if (Math.random() <= moveProbability) {
+                return new Action(Action.ActionType.MOVE, randomEntry(emptyNeighbors));
+            }
+        }
+        return new Action(Action.ActionType.STAY);
+
 
         // Rule 2
         // HINT: randomEntry(emptyNeighbors)
@@ -125,6 +155,5 @@ public class Plip extends Creature {
         // Rule 3
 
         // Rule 4
-        return new Action(Action.ActionType.STAY);
     }
 }

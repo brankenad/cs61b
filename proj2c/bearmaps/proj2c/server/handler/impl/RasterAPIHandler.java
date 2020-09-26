@@ -7,6 +7,7 @@ import spark.Response;
 import bearmaps.proj2c.utils.Constants;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -17,8 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static bearmaps.proj2c.utils.Constants.SEMANTIC_STREET_GRAPH;
-import static bearmaps.proj2c.utils.Constants.ROUTE_LIST;
+import static bearmaps.proj2c.utils.Constants.*;
 
 /**
  * Handles requests from the web browser for map images. These images
@@ -51,6 +51,106 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         return getRequestParams(request, REQUIRED_RASTER_REQUEST_PARAMS);
     }
 
+    private void isSuccessful(Map<String, Double> request, Map<String, Object> result) {
+        if (request.get("ullon") < ROOT_ULLON) {
+            request.put("ullon", ROOT_ULLON);
+            result.put("query_success", false);
+            return;
+        }
+        if (request.get("ullat") > ROOT_ULLAT) {
+            request.put("ullat", ROOT_ULLAT);
+            result.put("query_success", false);
+            return;
+        }
+        if (request.get("lrlon") > ROOT_LRLON) {
+            request.put("lrlon", ROOT_LRLON);
+            result.put("query_success", false);
+            return;
+        }
+        if (request.get("lrlat") < ROOT_LRLAT) {
+            request.put("lrlat", ROOT_LRLAT);
+            result.put("query_success", false);
+            return;
+        }
+        result.put("query_success", true);
+    }
+
+    private class RasterInit {
+        private double ullon;
+        private double ullat;
+        private int x;
+        private int y;
+        private double LonDPI;
+        private double LatDPI;
+
+        RasterInit(double ullon, double ullat, int x , int y, int depth) {
+            this.LonDPI = (ROOT_LRLON - ROOT_ULLON) / (Math.pow(2, depth));
+            this.LatDPI = (ROOT_ULLAT - ROOT_LRLAT) / (Math.pow(2, depth));
+            this.ullon = ullon + LonDPI;
+            this.ullat = ullat - LatDPI;
+            this.x = x;
+            this.y = y;
+
+        }
+    }
+
+    private void setDepth(Map<String, Object> result, double startlon, double endlon, double w) {
+        int depth = 0;
+        double theoLonDPP = (ROOT_LRLON - ROOT_ULLON) / TILE_SIZE;
+        double realLonDPP = (endlon - startlon) / w;
+        while (theoLonDPP > realLonDPP) {
+            theoLonDPP /= 2.0;
+            depth += 1;
+            if (depth == 7) {
+                break;
+            }
+        }
+        result.put("depth", depth);
+    }
+
+    private Map<String, Integer> setRaster(RasterInit ri, double lon, double lat, Map<String, Object> result, String str) {
+        Map<String, Integer> rasterPosi = new HashMap<>();
+        double theoEndLon = ri.ullon;
+        double theoEndLat = ri.ullat;
+        int endPosiX = ri.x;
+        int endPoisY = ri.y;
+
+        while (theoEndLon < lon || theoEndLat > lat) {
+            if (theoEndLon < lon) {
+               endPosiX += 1;
+               theoEndLon += ri.LonDPI;
+            }
+            if (theoEndLat > lat) {
+                endPoisY += 1;
+                theoEndLat -= ri.LatDPI;
+            }
+        }
+
+        rasterPosi.put("X", endPosiX);
+        rasterPosi.put("Y", endPoisY);
+        if (str.equals("UL")) {
+            result.put("raster_ul_lon", theoEndLon - ri.LonDPI);
+            result.put("raster_ul_lat", theoEndLat + ri.LatDPI);
+        } else if (str.equals("LR")) {
+            result.put("raster_lr_lon", theoEndLon);
+            result.put("raster_lr_lat", theoEndLat);
+        }
+
+        return rasterPosi;
+    }
+
+    private void setRendGird(int depth, int startRow, int endRow, int startCol, int endCol, Map<String, Object> result) {
+        int row = endRow - startRow + 1;
+        int column = endCol - startCol + 1;
+        String[][] arrGird = new String[row][column];
+        for (int i = 0; i < row; i += 1) {
+            for (int j = 0; j < column; j += 1) {
+                arrGird[i][j] = String.format("d%s_x%s_y%s.png", depth, j + startCol, i + startRow);
+            }
+        }
+
+        result.put("render_grid", arrGird);
+    }
     /**
      * Takes a user query and finds the grid of images that best matches the query. These
      * images will be combined into one big image (rastered) by the front end. <br>
@@ -87,8 +187,36 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
         //System.out.println("yo, wanna know the parameters given by the web browser? They are:");
         //System.out.println(requestParams);
         Map<String, Object> results = new HashMap<>();
+        /**
         System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
                 + "your browser.");
+        */
+        isSuccessful(requestParams, results);
+
+        double ullon = requestParams.get("ullon");
+        double ullat = requestParams.get("ullat");
+        double lrlon = requestParams.get("lrlon");
+        double lrlat = requestParams.get("lrlat");
+        double width = requestParams.get("w");
+
+        setDepth(results, ullon, lrlon, width);
+        int depth = (int) results.get("depth");
+
+        RasterInit startRaster = new RasterInit(ROOT_ULLON, ROOT_ULLAT, 0, 0, depth);
+        Map<String, Integer> startRasterPosi = setRaster(startRaster, ullon, ullat, results, "UL");
+        int startRasterPosiX = startRasterPosi.get("X");
+        int startRasterPosiY = startRasterPosi.get("Y");
+        double startRasterUlLon = (double) results.get("raster_ul_lon");
+        double startRasterUlLat = (double) results.get("raster_ul_lat");
+
+
+        RasterInit endRaster = new RasterInit(startRasterUlLon, startRasterUlLat, startRasterPosiX, startRasterPosiY, depth);
+        Map<String, Integer> endRasterPosi = setRaster(endRaster, lrlon, lrlat, results, "LR");
+        int endRasterPosiX = endRasterPosi.get("X");
+        int endRasterPosiY = endRasterPosi.get("Y");
+
+        setRendGird(depth, startRasterPosiY, endRasterPosiY, startRasterPosiX, endRasterPosiX, results);
+
         return results;
     }
 

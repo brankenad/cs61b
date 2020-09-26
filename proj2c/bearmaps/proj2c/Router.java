@@ -1,5 +1,9 @@
 package bearmaps.proj2c;
 
+import bearmaps.hw4.AStarSolver;
+import bearmaps.hw4.WeightedEdge;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -24,10 +28,33 @@ public class Router {
      */
     public static List<Long> shortestPath(AugmentedStreetMapGraph g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        //long src = g.closest(stlon, stlat);
-        //long dest = g.closest(destlon, destlat);
-        //return new WeirdSolver<>(g, src, dest, 20).solution();
-        return null;
+        long src = g.closest(stlon, stlat);
+        long dest = g.closest(destlon, destlat);
+        return new AStarSolver<>(g, src, dest, 20).solution();
+    }
+
+    private static List<WeightedEdge<Long>> findWays (AugmentedStreetMapGraph graph, List<Long> route) {
+        List<WeightedEdge<Long>> ways = new ArrayList<>();
+
+        for (int i = 0; i < route.size() - 1; i += 1) {
+            Long currVertex = route.get(i);
+            Long nextVertex = route.get(i + 1);
+            for (WeightedEdge<Long> e : graph.neighbors(currVertex)) {
+                if (e.to().equals(nextVertex)) {
+                    ways.add(e);
+                }
+            }
+        }
+
+        return ways;
+    }
+
+    private static NavigationDirection setNav(int dire, String way, double dict) {
+        NavigationDirection navi = new NavigationDirection();
+        navi.direction = dire;
+        navi.way = way;
+        navi.distance = dict;
+        return navi;
     }
 
     /**
@@ -40,7 +67,37 @@ public class Router {
      */
     public static List<NavigationDirection> routeDirections(AugmentedStreetMapGraph g, List<Long> route) {
         /* fill in for part IV */
-        return null;
+        List<WeightedEdge<Long>> ways = findWays(g, route);
+        List<NavigationDirection> direAnddis = new ArrayList<>();
+        direAnddis.add(setNav(0, ways.get(0).getName(), ways.get(0).weight()));
+
+        for (int i = 1; i < ways.size(); i += 1) {
+            int numOfNavi = direAnddis.size();
+            if (ways.get(i).getName() == null) {
+                ways.get(i).setName("unknown road");
+            }
+
+            if (ways.get(i - 1).getName().equals(ways.get(i).getName())) {
+                NavigationDirection currnavi = direAnddis.get(numOfNavi - 1);
+                currnavi.distance += ways.get(i).weight();
+                continue;
+            }
+
+            Long prevVertex = ways.get(i - 1).from();
+            Long currVertex = ways.get(i).from();
+            Long nextVertex = ways.get(i).to();
+
+            double prevBearing = NavigationDirection.bearing(g.lon(prevVertex), g.lon(currVertex),
+                                                             g.lat(prevVertex), g.lat(currVertex));
+            double currBearing = NavigationDirection.bearing(g.lon(currVertex), g.lon(nextVertex),
+                                                             g.lat(currVertex), g.lat(nextVertex));
+
+            int direc = NavigationDirection.getDirection(prevBearing, currBearing);
+
+            direAnddis.add(setNav(direc, ways.get(i).getName(), ways.get(i).weight()));
+        }
+
+        return direAnddis;
     }
 
     /**

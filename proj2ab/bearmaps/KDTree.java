@@ -56,16 +56,16 @@ public class KDTree implements PointSet{
         return node;
     }
 
-    private boolean isUseful(Node badnode, Point currentPoint, Point nearestPoint) {
-        if (badnode == null) {
+    private boolean isUseful(Node node, Point currentPoint, Point nearestPoint) {
+        if (node == null) {
             return false;
         }
         double nearestDistance = Point.distance(currentPoint, nearestPoint);
         double badestDistance;
-        if (badnode.xDimension) {
-            badestDistance = Point.distance(new Point(currentPoint.getX(), badnode.point.getY()), currentPoint);
+        if (!node.xDimension) {
+            badestDistance = Point.distance(new Point(currentPoint.getX(), node.point.getY()), currentPoint);
         } else {
-            badestDistance = Point.distance(new Point(badnode.point.getX(), currentPoint.getY()), currentPoint);
+            badestDistance = Point.distance(new Point(node.point.getX(), currentPoint.getY()), currentPoint);
         }
         return badestDistance < nearestDistance;
     }
@@ -91,7 +91,7 @@ public class KDTree implements PointSet{
             badSide = node.left;
         }
         nearestPoint = nearestPointHelp(goodSide, currentPoint, nearestPoint);
-        if (isUseful(badSide, currentPoint, nearestPoint)) {
+        if (isUseful(node, currentPoint, nearestPoint)) {
             nearestPoint = nearestPointHelp(badSide, currentPoint, nearestPoint);
         }
         return nearestPoint;
